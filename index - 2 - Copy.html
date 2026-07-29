@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ĐIỀU LỆNH CAND 2026</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 5px;
+            color: #333;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 5px 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #004d40;
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 25px;
+            font-style: italic;
+        }
+        .progress-box {
+            position: sticky;
+            top: 5px;
+            background: #e0f2f1;
+            padding: 4px 10px;
+            border-radius: 4px;
+            border-left: 3px solid #00796b;
+            margin-bottom: 12px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+        .question-card {
+            background: #fafafa;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+        .question-title {
+            font-weight: bold;
+            font-size: 0.95rem;
+            color: #1a237e;
+            margin-bottom: 12px;
+        }
+        .options {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .option-item {
+            margin-bottom: 8px;
+        }
+        .option-label {
+            display: flex;
+            align-items: flex-start;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            background: #fff;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .option-label:hover {
+            background: #f1f8e9;
+        }
+        .option-label input {
+            margin-top: 3px;
+            margin-right: 10px;
+        }
+        .btn-submit {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            background-color: #00796b;
+            color: white;
+            font-size: 0.95rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 25px;
+            transition: background 0.3s;
+        }
+        .btn-submit:hover {
+            background-color: #004d40;
+        }
+        .result-box {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #e8f5e9;
+            border: 2px solid #2e7d32;
+            border-radius: 6px;
+            display: none;
+        }
+        .correct { background-color: #c8e6c9 !important; border-color: #4caf50; }
+        .incorrect { background-color: #ffcdd2 !important; border-color: #e53935; }
+        .answer-key {
+            font-weight: bold;
+            color: #d32f2f;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>ĐIỀU LỆNH CAND 2026</h1>
+    <div class="subtitle">(Hiển thị đáp án khi nộp bài)</div>
+
+    <div class="progress-box">
+        <span id="progress-text">Đã hoàn thành: 0 / 40 câu</span>
+        <button onclick="location.reload()" style="padding: 5px 10px; cursor:pointer;">Làm mới / Tráo đề</button>
+    </div>
+
+    <form id="quiz-form">
+        <div id="questions-container"></div>
+        <button type="button" class="btn-submit" onclick="submitQuiz()">NỘP BÀI VÀ XEM KẾT QUẢ</button>
+    </form>
+
+    <div id="result" class="result-box"></div>
+</div>
+
+<script>
+// Dữ liệu 40 câu hỏi (Mỗi câu gồm câu hỏi và mảng đáp án với đáp án đúng ở vị trí 0)
+const rawQuestions = [
+    {
+        q: "Điều lệnh nội vụ CAND quy định như thế nào về quan hệ giữa thủ trưởng với các phó thủ trưởng?",
+        a: [
+            "Là quan hệ giữa người chỉ huy cao nhất của đơn vị với cấp phó cùng cấp. Khi thủ trưởng đi vắng, thì chỉ định một phó thủ trưởng thay mình phụ trách đơn vị. Phó thủ trưởng được chỉ định phải chấp hành nghiêm túc phân công, báo cáo kết quả công tác, chịu trách nhiệm trước pháp luật và thủ trưởng về hành vi, quyết định của mình.",
+            "Là quan hệ giữa người chỉ huy cao nhất của đơn vị với cấp phó cùng cấp. Người chỉ huy cao nhất của đơn vị và cấp phó cùng cấp phải gương mẫu thực hiện các quy định về điều lệnh CAND và quy chế làm việc của đơn vị.",
+            "Là quan hệ giữa người chỉ huy cao nhất của đơn vị với cấp phó cùng cấp. Trong công tác lãnh đạo, chỉ đạo có sự phân công phụ trách cụ thể từng lĩnh vực công tác và chịu trách nhiệm về kết quả thực hiện của lĩnh vực đó."
+        ]
+    },
+    {
+        q: "Điều lệnh nội vụ CAND quy định quan hệ giữa lãnh đạo, chỉ huy với cán bộ chiến sĩ thuộc quyền là quan hệ như thế nào?",
+        a: [
+            "Là quan hệ chỉ huy và chấp hành, cấp dưới phải tuyệt đối chấp hành mệnh lệnh cấp trên trong khi thi hành nhiệm vụ. cấp trên phải tôn trọng, yêu thương, giúp đỡ, lắng nghe ý kiến, tâm tư, nguyện vọng của cấp dưới; phải gương mẫu trong công tác và tu dưỡng, rèn luyện phẩm chất đạo đức, lối sống.",
+            "Là quan hệ chỉ huy và chấp hành, cấp dưới phải tuyệt đối chấp hành mệnh lệnh cấp trên trong thi hành nhiệm vụ. cấp trên phải lắng nghe ý kiến của cấp dưới; luôn phối hợp chặt chẽ để hoàn thành nhiệm vụ được giao.",
+            "Là quan hệ chỉ huy và chấp hành, cấp dưới phải tuyệt đối chấp hành mệnh lệnh cấp trên trong thi hành nhiệm vụ. Luôn giữ gìn đoàn kết nội bộ, thực hiện tự phê bình và phê bình, trung thực, thẳng thắn cùng tiến bộ."
+        ]
+    },
+    {
+        q: "Điều lệnh nội vụ CAND quy định đơn vị, cán bộ chiến sĩ phải xây dựng chương trình, kế hoạch công tác như thế nào?",
+        a: [
+            "Các đơn vị phải xây dựng chương trình, kế hoạch công tác tuần, tháng, quý, 06 tháng, năm; cán bộ chiến sĩ CAND phải xây dựng chương trình, kế hoạch công tác tuần được lãnh đạo, chỉ huy trực tiếp phê duyệt.",
+            "Các đơn vị, địa phương và cán bộ, chiến sĩ phải xây dựng chương trình, kế hoạch công tác tuần, tháng, quý, 06 tháng, năm và được thủ trưởng trực tiếp phụ trách duyệt; lãnh đạo, chỉ huy phải đánh giá kết quả thực hiện trong tuần cho cán bộ chiến sĩ.",
+            "Các đơn vị và cán bộ chiến sĩ CAND phải xây dựng chương trình, kế hoạch công tác tuần, tháng, quý, 06 tháng; ghi số kế hoạch công tác tuần theo mẫu và phải ghi đầy đủ, cụ thể, dự kiến nội dung công việc trong tuần và kết quả thực hiện từng ngày."
+        ]
+    },
+    {
+        q: "Điều lệnh nội vụ CAND quy định người dự hội nghị, cuộc họp, buổi lễ, học tập phải thực hiện như thế nào?",
+        a: [
+            "Người dự hội nghị, cuộc họp, buổi lễ, học tập phải đúng thành phần, đến trước giờ quy định 05 phút; phải chấp hành đúng nội quy và các quy định của ban tổ chức hoặc người chủ trì; ghi chép đầy đủ nội dung cuộc họp; không làm việc riêng, không làm mất trật tự hoặc tự ý ra ngoài; rời khỏi nơi tổ chức hội nghị, cuộc họp sau khi người chủ trì tuyên bố kết thúc, lãnh đạo cấp trên ra về.",
+            "Người dự hội nghị, cuộc họp, buổi lễ, học tập, phải đúng thành phần, chuẩn bị ý kiến phát biểu; rời khỏi nơi tổ chức hội nghị, cuộc họp, buổi lễ, học tập khi có yêu cầu công tác và không phải báo cáo người chủ trì hoặc ban tổ chức.",
+            "Người dự hội nghị, cuộc họp, buổi lễ phải chuẩn bị ý kiến phát biểu tại hội nghị theo đúng chủ đề nội dung hội nghị; rời khỏi nơi tổ chức hội nghị, cuộc họp, buổi lễ sau khi người chủ trì tuyên bố kết thúc hội nghị."
+        ]
+    },
+    {
+        q: "Điều lệnh nội vụ CAND quy định người nhận chỉ thị, mệnh lệnh phải thực hiện như thế nào?",
+        a: [
+            "Người nhận chỉ thị, mệnh lệnh trực tiếp của cấp trên phải thi hành ngay, đồng thời phải báo cáo thủ trưởng trực tiếp của mình biết nội dung công việc cấp trên giao, trừ trường hợp cấp trên ra chỉ thị, mệnh lệnh yêu cầu không báo cáo nội dung với thủ trưởng trực tiếp; thực hiện xong chỉ thị, mệnh lệnh phải báo cáo chính xác, đầy đủ, kịp thời kết quả thực hiện với người ra chỉ thị, mệnh lệnh.",
+            "Người nhận chỉ thị, mệnh lệnh nếu chưa rõ nội dung chỉ thị, mệnh lệnh thì phải hỏi lại và đề đạt ý kiến nếu thấy chỉ thị mệnh lệnh chưa phù hợp với thực tế; đồng thời báo cáo ngay với thủ trưởng trực tiếp của mình biết nội dung công việc cấp trên giao.",
+            "Người nhận chỉ thị, mệnh lệnh phải có ý kiến đề đạt với người ra chỉ thị, mệnh lệnh nếu thấy chỉ thị, mệnh lệnh chưa rõ ràng, đồng thời báo cáo với lãnh đạo cấp trên hoặc thủ trưởng phụ trách trực tiếp của mình biết."
+        ]
+    },
+    {
+        q: "Điều lệnh nội vụ CAND quy định tổ chức thực hiện chương trình, kế hoạch công tác như thế nào?",
+        a: [
+            "Chương trình, kế hoạch công tác phải được tổ chức thực hiện nghiêm túc, có kiểm tra đôn đốc và đánh giá kết quả thực hiện, cấp ủy lãnh đạo Công an các cấp căn cứ vào kết quả thực hiện chương trình, kế hoạch công tác của đơn vị và nội dung ghi kế hoạch công tác tuần của cán bộ chiến sĩ để đánh giá chất lượng, hiệu quả công tác của tập thể và phân loại, đánh giá chất lượng cán bộ.",
+            "Chương trình, kế hoạch công tác phải được tổ chức thực hiện nghiêm túc, có kiểm tra đôn đốc và đánh giá kết quả thực hiện. Cán bộ, chiến sĩ, kể cả cán bộ làm các nhiệm vụ cần giữ bí mật nghiệp vụ phải ghi sổ kế hoạch đầy đủ, cụ thể.",
+            "Chương trình, kế hoạch công tác phải được tổ chức thực hiện nghiêm túc, có kiểm tra đôn đốc và đánh giá kết quả thực hiện. Thủ trưởng đơn vị căn cứ báo cáo kết quả thực hiện để phân công nhiệm vụ phù hợp cho từng cán bộ chiến sĩ."
+        ]
+    },
+    {
+        q: "Điều lệnh nội vụ CAND quy định về nhiệm vụ của cán bộ trực ban như thế nào?",
+        a: [
+            "Cán bộ trực ban khi làm nhiệm vụ phải giúp thủ trưởng đơn vị nắm vững quân số, vũ khí, trang bị phương tiện; đề xuất xử lý và giải quyết các yêu cầu công tác, chiến đấu, xây dựng lực lượng, hậu cần kỹ thuật; phải đeo băng trực ban; ghi chép đầy đủ tình hình trong ca trực và các phương tiện cần thiết phục vụ công tác vào sổ trực ban, hết ca trực phải ký bàn giao cho ca sau.",
+            "Cán bộ trực ban khi làm nhiệm vụ phải giúp thủ trưởng nắm vững quân số, vũ khí, trang bị, phương tiện; đề xuất giải quyết các yêu cầu công tác và nắm tình hình của đơn vị về công tác chính trị tư tưởng.",
+            "Cán bộ trực ban khi làm nhiệm vụ phải giúp thủ trưởng nắm vững quân số, vũ khí, trang bị phương tiện; đôn đốc, báo động, kiểm tra quân số cán bộ chiến sĩ trực trong ngày."
+        ]
+    },
+    {
+        q: "Điều lệnh nội vụ CAND quy định về chế độ bảo mật như thế nào?",
+        a: [
+            "Cán bộ chiến sĩ không được tự ý tìm hiểu công việc của người khác; không tự tiện xem tài liệu hoặc vào nơi mà mình không có phận sự; không được cung cấp, phát ngôn, sử dụng trái phép thông tin bí mật; không chuyển tài liệu mật qua mạng internet, mạng máy tính không được bảo mật theo quy định của Bộ trưởng Bộ Công an.",
+            "Cán bộ chiến sĩ khi phát hiện có người để lộ bí mật phải kịp thời nhắc nhở người để lộ, lọt bí mật và yêu cầu người đó phải rút kinh nghiệm, đồng thời báo cáo ngay cấp có thẩm quyền xem xét, giải quyết xử lý.",
+            "Cán bộ chiến sĩ phải lưu trữ và quản lý tài liệu mật theo quy định của Đảng, Nhà nước và Bộ Công an, tuyệt đối không để tài liệu mật không đúng nơi quy định; khi có yêu cầu kiểm tra phải xuất trình đầy đủ."
+        ]
+    },
+    {
+        q: "Điều lệnh nội vụ CAND quy định quản lý tài liệu như thế nào?",
+        a: [
+            "Tài liệu phải được phân loại, quản lý, sử dụng theo đúng quy định của pháp luật về bảo vệ bí mật nhà nước. Cán bộ chiến sĩ làm việc ngoài giờ tại cơ quan, đơn vị hoặc mang theo tài liệu nghiệp vụ đi công tác phải được sự đồng ý của thủ trưởng đơn vị và có trách nhiệm bảo vệ an toàn tài liệu.",
+            "Tài liệu phải được phân loại, quản lý, sử dụng theo đúng quy định của pháp luật về bảo vệ bí mật nhà nước. Tất cả các tài liệu khi được giao quản lý phải được thống kê lưu trữ và theo dõi trong quá trình triển khai thực hiện.",
+            "Tài liệu phải được phân loại, quản lý, sử dụng theo đúng quy định của pháp luật về bảo vệ bí mật nhà nước. Cán bộ chiến sĩ khi nhận tài liệu mật phải bảo quản chặt chẽ trong tủ có khóa."
+        ]
+    },
+    {
+        q: "Điều lệnh nội vụ CAND quy định về quản lý vũ khí, vật liệu nổ, công cụ hỗ trợ, phương tiện nghiệp vụ như thế nào?",
+        a: [
+            "Vũ khí, vật liệu nổ, công cụ hỗ trợ, phương tiện nghiệp vụ khác phải được quản lý chặt chẽ theo quy định, bảo đảm an toàn; có giấy phép sử dụng và sổ theo dõi; phân công cán bộ quản lý có chuyên môn về quản lý vũ khí, vật liệu nổ, công cụ hỗ trợ và ghi chép, giao nhận bảo dưỡng theo quy định, bảo đảm yêu cầu sẵn sàng chiến đấu; phải chấp hành yêu cầu khi kiểm tra.",
+            "Vũ khí, vật liệu nổ, công cụ hỗ trợ, phương tiện nghiệp vụ khác phải được quản lý chặt chẽ theo quy định, bảo đảm an toàn; mỗi cán bộ chiến sĩ phải có số ghi chép về việc giao nhận vũ khí và xuất trình khi có yêu cầu kiểm tra.",
+            "Vũ khí, vật liệu nổ, công cụ hỗ trợ, phương tiện nghiệp vụ khác phải được quản lý chặt chẽ theo quy định, bảo đảm an toàn; khi giao nhận vũ khí, công cụ hỗ trợ phải được sự đồng ý và phê duyệt bằng văn bản của lãnh đạo, chỉ huy đơn vị."
+        ]
+    },
+    {
+        q: "Điều lệnh nội vụ CAND quy định về sử dụng trang phục CAND như thế nào?",
+        a: [
+            "Trang phục CAND phải sử dụng đúng mục đích theo quy định. Nghiêm cấm cán bộ chiến sĩ CAND sản xuất, làm giả, tàng trữ, đổi, cho, tặng, mua, bán và sử dụng trái phép trang phục; cấm viết, vẽ lên trang phục; sửa chữa, thay đổi quy cách, kiểu dáng, màu sắc và chất liệu của trang phục CAND.",
+            "Trang phục CAND phải sử dụng đúng mục đích theo quy định. Cán bộ chiến sĩ sử dụng trang phục CAND trong giờ hành chính và khi thực hiện nhiệm vụ, căn cứ yêu cầu công tác để đề xuất việc sử dụng trang phục cho phù hợp.",
+            "Trang phục CAND phải sử dụng đúng mục đích theo quy định. Tùy vào đặc điểm công tác, chiến đấu để cán bộ, chiến sĩ sử dụng trang phục CAND bảo đảm thuận tiện, linh hoạt theo đúng quy định."
+        ]
+    },
+    {
+        q: "Điều lệnh nội vụ CAND quy định cán bộ chiến sĩ khi làm nhiệm vụ được mặc thường phục trong những trường hợp nào?",
+        a: [
+            "Cán bộ chiến sĩ khi làm nhiệm vụ được mặc thường phục trong các trường hợp do yêu cầu công tác hoặc cần xã hội hóa (do cấp có thẩm quyền quyết định); cán bộ chiến sĩ tạm tuyển; Công nhân Công an; cán bộ chiến sĩ nữ khi mang thai từ tháng thứ 3 đến khi sinh con được 06 tháng tuổi; cán bộ chiến sĩ chưa được cấp trang phục CAND.",
+            "Cán bộ chiến sĩ khi làm nhiệm vụ được mặc thường phục trong các trường hợp do yêu cầu công tác hoặc cần xã hội hóa (do cấp có thẩm quyền quyết định); Công nhân Công an; cán bộ chiến sĩ nữ khi mang thai.",
+            "Cán bộ chiến sĩ khi làm nhiệm vụ được mặc thường phục trong các trường hợp do yêu cầu công tác hoặc cần xã hội hóa (do Thủ trưởng đơn vị quyết định); cán bộ chiến sĩ tạm tuyển; Công nhân Công an."
+        ]
+    },
+    {
+        q: "Điều lệnh nội vụ CAND quy định Chào như thế nào?",
+        a: [
+            "Cán bộ chiến sĩ khi gặp nhau phải chào; cấp dưới phải chào cấp trên trước; cùng chức vụ thì người có cấp bậc thấp hơn phải chào trước; ngang chức, ngang cấp thì người có tuổi đời thấp hơn hoặc nhìn thấy trước phải chào trước; người được chào phải chào lại. Khi mặc trang phục CAND phải chào bằng động tác theo điều lệnh đội ngũ hoặc kết hợp chào bằng động tác và bằng lời; thường xuyên gặp nhau thì lần đầu chào bằng động tác, lần sau chào bằng lời.",
+            "Cán bộ chiến sĩ khi gặp nhau phải chào; cấp dưới phải chào cấp trên trước; cùng chức vụ thì người có cấp bậc thấp hơn phải chào trước; ngang chức, ngang cấp thì không căn cứ vào tuổi đời, người nhìn thấy trước phải chào trước; người được chào phải chào lại.",
+            "Cán bộ chiến sĩ khi gặp nhau phải chào; cấp dưới phải chào cấp trên trước; cùng chức vụ thì người có cấp bậc thấp hơn phải chào trước; ngang chức, ngang cấp thì người nhìn thấy trước phải chào trước; người được chào phải chào lại."
+        ]
+    },
+    {
+        q: "Điều lệnh nội vụ CAND quy định như thế nào về xưng hô khi giao tiếp trong lực lượng CAND?",
+        a: [
+            "Khi làm việc, hội họp, học tập, sinh hoạt tập thể, cán bộ chiến sĩ xưng hô với nhau bằng đồng chí và tôi, sau tiếng đồng chí có thể gọi cấp bậc, họ tên, chức vụ của người mình tiếp xúc; đối với cấp trên có thể gọi bằng thủ trưởng. Ngoài giờ làm việc, cán bộ chiến sĩ xưng hô với nhau sao cho phù hợp với phong tục, truyền thống văn hóa Việt Nam.",
+            "Khi làm việc, hội họp, học tập, sinh hoạt tập thể, cán bộ chiến sĩ xưng hô với nhau sao cho phù hợp với phong tục, truyền thống văn hóa, không vi phạm quy tắc ứng xử, giữ tư thế, lễ tiết, tác phong nghiêm túc. Trong các trường CAND xưng hô bằng thầy, cô, và em.",
+            "Khi làm việc, hội họp, học tập, sinh hoạt tập thể, cán bộ chiến sĩ xưng hô với nhau bằng đồng chí và tôi, sau tiếng đồng chí có thể gọi cấp bậc, họ tên, chức vụ của người mình tiếp xúc. Ngoài giờ làm việc, cán bộ chiến sĩ chủ động việc xưng hô khi giao tiếp."
+        ]
+    },
+    {
+        q: "Điều lệnh nội vụ CAND quy định như thế nào về ứng xử khi giao tiếp trong lực lượng CAND?",
+        a: [
+            "Khi giao tiếp, ứng xử phải thể hiện thái độ văn minh, lịch sự, xưng hô theo quy định. Trước khi vào phòng làm việc của người khác phải gõ cửa, được sự đồng ý mới vào. Cấp dưới xin gặp cấp trên phải nêu rõ lý do, cấp trên đồng ý mới được gặp; khi tiếp xúc với cấp trên, cấp dưới không tự động bắt tay trước hoặc tự ý kéo ghế ngồi; phải chào cấp trên trước khi ra về.",
+            "Khi giao tiếp, ứng xử phải thể hiện thái độ văn minh, lịch sự, xưng hô theo quy định. Do yêu cầu công tác cần gặp cấp trên, cấp dưới phải gọi điện trước khi gặp; phải chào cấp trên trước khi ra về.",
+            "Khi giao tiếp, ứng xử phải thể hiện thái độ văn minh, lịch sự, xưng hô theo quy định. Trước khi vào phòng làm việc của người khác phải gõ cửa, được sự đồng ý mới vào. Cấp dưới xin gặp cấp trên phải nêu rõ lý do, cấp trên đồng ý mới được gặp; khi tiếp xúc với cấp trên, cấp dưới chủ động chào hỏi bắt tay trước."
+        ]
+    },
+    {
+        q: "Chương trình hành động số 10/CTr-BCA-X03 ngày 12/5/2026 của Bộ trưởng Bộ Công an về tăng cường kỷ luật, siết chặt kỷ cương, nâng cao ý thức chấp hành điều lệnh CAND có bao nhiêu chỉ tiêu và nhiệm vụ?",
+        a: [
+            "Có 3 chỉ tiêu, 6 nhiệm vụ.",
+            "Có 3 chỉ tiêu, 5 nhiệm vụ.",
+            "Có 4 chỉ tiêu, 6 nhiệm vụ."
+        ]
+    },
+    {
+        q: "Nội dung nhiệm vụ thứ nhất của Chương trình hành động số 10/CTr-BCA-X03 ngày 12/5/2026 của Bộ trưởng Bộ Công an về tăng cường kỷ luật, siết chặt kỷ cương, nâng cao ý thức chấp hành điều lệnh CAND là gì?",
+        a: [
+            "Tạo chuyển biến thực chất về nhận thức của lãnh đạo, chỉ huy và cán bộ chiến sĩ về vị trí, vai trò và các quy định của Bộ Công an về công tác điều lệnh Công an nhân dân.",
+            "Tỷ lệ tập thể, cá nhân vi phạm điều lệnh CAND của năm sau giảm từ 10% đến 20% so với năm trước liền kề. Riêng tỷ lệ lãnh đạo, chỉ huy vi phạm giảm 50% mỗi năm.",
+            "Tạo chuyển biến mạnh mẽ, rõ rệt nhận thức của lãnh đạo, chỉ huy, cán bộ chiến sĩ, nhất là cấp ủy lãnh đạo Công an các cấp về vị trí, vai trò, tầm quan trọng của công tác điều lệnh CAND trong xây dựng lực lượng Công an."
+        ]
+    },
+    {
+        q: "Nội dung nhiệm vụ thứ ba của Chương trình hành động số 10/CTr-BCA-X03 ngày 12/5/2026 của Bộ trưởng Bộ Công an về tăng cường kỷ luật, siết chặt kỷ cương, nâng cao ý thức chấp hành điều lệnh CAND là gì?",
+        a: [
+            "Nâng cao vai trò, trách nhiệm nêu gương của cấp ủy, lãnh đạo, chỉ huy Công an các cấp trong thực hiện điều lệnh CAND và xây dựng hình ảnh đẹp về tư thế, lễ tiết, tác phong của người cán bộ chiến sĩ CAND.",
+            "Tổ chức triển khai thực hiện Chương trình hành động khoa học, nghiêm túc, thường xuyên, liên tục, đảm bảo thiết thực, hiệu quả, tránh hình thức. Gắn trách nhiệm của cấp ủy Đảng, Thủ trưởng đơn vị trong triển khai thực hiện.",
+            "Quán triệt Nghị quyết Đại hội Đảng bộ Công an Trung ương lần thứ VIII, nhiệm kỳ 2025 - 2030 và phong trào thi đua “Ba nhất” của Bộ Công an, để khắc phục những tồn tại, hạn chế trong chấp hành điều lệnh CAND"
+        ]
+    },
+    {
+        q: "Kế hoạch số 322/KH-CAT-PX03 ngày 08/6/2026 của Giám đốc Công an tỉnh về triển khai Chương trình hành động số 10/CTr-BCA-X03 ngày 12/5/2026 của Bộ Công an yêu cầu các đơn vị thực hiện nhiệm vụ tạo chuyển biến nhận thức của lãnh đạo, chỉ huy, cán bộ chiến sĩ về vị trí, vai trò và các quy định về công tác điều lệnh như thế nào?",
+        a: [
+            "Định kỳ hằng tuần, khi tổ chức giao ban, các đơn vị, địa phương bổ sung nội dung, nghiên cứu, học tập các quy định về điều lệnh CAND hoặc thảo luận các tình huống vi phạm điều lệnh trong thực tiễn để lãnh đạo, chỉ huy, cán bộ chiến sĩ nắm, không vi phạm.",
+            "Hằng năm tổ chức tập huấn điều lệnh nhằm nâng cao bản lĩnh chính trị cho lãnh đạo, chỉ huy, cán bộ chiến sĩ và sát với tình hình thực tiễn công tác, chiến đấu của từng đơn vị và hệ lực lượng.",
+            "Hằng năm các đơn vị địa phương căn cứ kế hoạch tập huấn điều lệnh, quân sự, võ thuật của Công an tỉnh, xây dựng kế hoạch tập huấn của đơn vị mình, tổ chức tập huấn cho 100% lãnh đạo, chỉ huy, cán bộ chiến sĩ theo đúng quy định, đảm bảo nghiêm túc đúng thời gian, nội dung quy định."
+        ]
+    },
+    {
+        q: "Điều lệnh nội vụ CAND quy định mặc trang phục CAND như thế nào?",
+        a: [
+            "Phải đồng bộ, thống nhất, gọn gàng, sạch sẽ, là phẳng, cài đủ khóa, cúc (áo thường dùng xuân hè nam không cài cúc cổ); đeo cấp hiệu, phù hiệu, ký hiệu, dây lưng; mặc áo sơ mi màu trắng, thắt caravat (đối với trang phục thu đông), cành tùng đơn (đối với lễ phục) đi giày, tất do Bộ Công an cấp.",
+            "Phải đồng bộ, thống nhất, gọn gàng, sạch sẽ, là phẳng, cài đủ khóa, cúc; đeo cấp hiệu, phù hiệu, ký hiệu, dây lưng, cành tùng đơn (đối với lễ phục) đi giày, tất đầy đủ.",
+            "Phải đồng bộ, thống nhất, gọn gàng, sạch sẽ, là phẳng, cài đủ khóa, cúc (áo thường dùng xuân hè nam không cài cúc cổ), đeo cấp hiệu, phù hiệu, ký hiệu, dây lưng; giữ đúng tư thế lễ tiết, tác phong."
+        ]
+    },
+    {
+        q: "Điều lệnh nội vụ CAND quy định khi làm nhiệm vụ phải ăn ở, sinh hoạt tại nhà dân, cán bộ chiến sĩ phải thực hiện như thế nào?",
+        a: [
+            "Phải giữ đúng tư thế, lễ tiết, tác phong; tôn trọng nếp sống của gia đình, phong tục, tập quán của địa phương và làm tốt công tác dân vận.",
+            "Ứng xử có văn hóa, tôn trọng, khiêm tốn, bình tĩnh, tận tình, chu đáo. Thực hiện theo đúng quy định của Pháp luật và của Bộ Công an; tích cực tham gia lao động sản xuất, giúp dân phát triển kinh tế.",
+            "Phải gương mẫu chấp hành chủ trương, đường lối, chính sách của Đảng, pháp luật của Nhà nước, quy định của địa phương; đoàn kết với Nhân dân. Phải tích cực tuyên truyền, vận động xóa bỏ các tệ nạn xã hội."
+        ]
+    },
+    {
+        q: "Điều lệnh nội vụ CAND quy định cán bộ chiến sĩ khi sinh hoạt ở gia đình, nơi cư trú và những nơi khác phải thực hiện như thế nào?",
+        a: [
+            "Phải gương mẫu chấp hành chủ trương, đường lối, chính sách của Đảng, pháp luật của Nhà nước, quy định của địa phương; đoàn kết với nhân dân nơi cư trú; trong quan hệ gia đình phải hiếu thảo, bình đẳng, hòa thuận, giúp đỡ nhau cùng tiến bộ, thực hiện nếp sống văn minh, gia đình văn hóa.",
+            "Phải giữ đúng tư thế, lễ tiết, tác phong; tôn trọng nếp sống của gia đình, phong tục, tập quán của địa phương và làm tốt công tác dân vận. Phải tích cực lao động sản xuất, phát triển kinh tế gia đình vững mạnh.",
+            "Phải gương mẫu chấp hành chủ trương, đường lối của Đảng, chính sách, pháp luật của Nhà nước, quy định của địa phương, đoàn kết với Nhân dân nơi cư trú; trong quan hệ gia đình phải hiếu thảo, bình đẳng, hòa thuận, giúp đỡ nhau cùng tiến bộ. Phải tích cực đấu tranh phòng, chống tội phạm, bảo đảm an ninh, trật tự."
+        ]
+    },
+    {
+        q: "Nghi lễ CAND quy định cách nhận huân chương, huy chương, bằng khen, giấy khen có khung như thế nào?",
+        a: [
+            "Hai cánh tay trên khép sát sườn, hai cánh tay dưới hơi co lên tạo với cánh tay trên một góc 150° (độ), 2 bàn tay ngửa nằm cạnh dưới khung, 4 ngón con khép lại bên ngoài, ngón cái ôm choàng cạnh bên khung bằng. Khi đi về vị trí, chuyển phần thưởng sang tay trái, mặt trước quay ra ngoài, cánh tay trái thẳng, 4 ngón con nắm giữa khung, lòng bàn tay quay vào trong sát thân người.",
+            "Hai cánh tay trên khép sát sườn, hai cánh tay dưới hơi co lên tạo với cánh tay trên một góc 120° (độ), hai bàn tay ngửa nắm cạnh dưới khung, 4 ngón con khép lại bên ngoài, ngón cái ôm choàng cạnh bên của khung, mặt trước hướng về phía đơn vị.",
+            "Hai cánh tay trên khép sát sườn, hai cánh tay dưới hơi co lên tạo với cánh tay trên một góc 180° (độ), hai bàn tay ngửa nắm cạnh dưới khung, 4 ngón con khép lại bên ngoài, ngón cái ôm choàng cạnh bên của khung, mặt trước hướng về phía đơn vị."
+        ]
+    },
+    {
+        q: "Thông tư số 12/2023/TT-BCA ngày 20/3/2023 của Bộ trưởng Bộ Công an quy định về quy tắc ứng xử của cán bộ chiến sĩ, quy định về ứng xử khi sử dụng tài khoản internet, mạng xã hội như thế nào?",
+        a: [
+            "Không đăng tải, lưu trữ, bình luận, phát tán, chia sẻ các thông tin, tài liệu, hình ảnh có nội dung sai sự thật, chưa được kiểm chứng, trái với đường lối, chủ trương của Đảng, chính sách, pháp luật của Nhà nước, quy định của ngành Công an; bảo đảm giữ gìn sự trong sáng của tiếng Việt; không sử dụng ngôn ngữ phản cảm, gây thù hận, kích động bạo lực, phân biệt chủng tộc, vùng miền, giới tính, tôn giáo; không cổ xúy, tiếp tay cho các trào lưu lệch lạc, thiếu văn hóa. Nhận xét đúng mực, có văn hóa, trách nhiệm, tính xây dựng về những vấn đề được dư luận xã hội quan tâm.",
+            "Khi sử dụng các phương tiện điện tử khác, cán bộ chiến sĩ CAND không truy cập, lưu trữ, phát tán, bình luận, chia sẻ các thông tin, tài liệu, bài viết, hình ảnh trên mạng xã hội; không giới thiệu, sử dụng tên, hình ảnh, phiên hiệu đơn vị lên trang mạng xã hội.",
+            "Khi giao tiếp qua điện thoại, cán bộ chiến sĩ CAND phải luôn văn minh, lịch sự, nhẹ nhàng, nội dung trao đổi phải ngắn gọn, dễ hiểu; không trao đổi nội dung bí mật qua điện thoại."
+        ]
+    },
+    {
+        q: "Thông tư số 12/2023/TT-BCA ngày 20/3/2023 của Bộ trưởng Bộ Công an quy định về quy tắc ứng xử của cán bộ chiến sĩ, quy định ứng xử với cấp trên như thế nào?",
+        a: [
+            "Phục tùng sự chỉ đạo, chỉ thị, mệnh lệnh và nhiệm vụ cấp trên giao, tôn trọng, tin tưởng cấp trên. Báo cáo trung thực, kịp thời, đầy đủ với cấp trên về tình hình, kết quả thực hiện nhiệm vụ được giao.",
+            "Sẵn sàng nhận và hoàn thành tốt các nhiệm vụ cấp trên giao. Sau khi kết thúc nhiệm vụ được giao phải báo cáo với cấp trên về kết quả thực hiện và chỉ báo cáo một lần bảo đảm ngắn gọn đầy đủ.",
+            "Trong quá trình công tác thực hiện nhiệm vụ tuyệt đối chấp hành nghiêm chỉ thị, mệnh lệnh của cấp trên giao và thường xuyên báo cáo kết quả để cấp trên chỉ đạo thực hiện các nhiệm vụ tiếp theo."
+        ]
+    },
+    {
+        q: "Thông tư số 113/2025/TT-BCA ngày 28/11/2025 của Bộ trưởng Bộ Công an quy định về xử lý vi phạm điều lệnh CAND, quy định xử lý bằng hình thức Hạ một bậc danh hiệu thi đua năm đối với đơn vị vi phạm nhóm hành vi nào sau đây?",
+        a: [
+            "Thực hiện không đúng quy định của Bộ Công an về quản lý tài liệu, quản lý vũ khí, vật liệu nổ, công cụ hỗ trợ, phương tiện nghiệp vụ, quản lý vật chứng phương tiện và đồ vật tài liệu tạm giữ; quản lý tài sản, phương tiện của đơn vị; thu hồi trang phục, Công an hiệu, cấp hiệu, phù hiệu, số hiệu, cành tùng, mũ kêpi; thu hồi vũ khí, công cụ hỗ trợ, phương tiện nghiệp vụ, các giấy tờ công tác khác.",
+            "Tổng số lượt cán bộ chiến sĩ vi phạm điều lệnh CAND trong năm có tỷ lệ từ 10% đến 15% so với biên chế đơn vị.",
+            "Không tổ chức sơ kết, tổng kết rút kinh nghiệm các chuyên đề công tác theo kế hoạch của Bộ Công an, sơ kết công tác 06 tháng đầu năm và tổng kết năm."
+        ]
+    },
+    {
+        q: "Thông tư số 113/2025/TT-BCA ngày 28/11/2025 của Bộ trưởng Bộ Công an quy định về xử lý vi phạm điều lệnh CAND, quy định xử lý bằng hình thức Hạ hai bậc danh hiệu thi đua năm đối với đơn vị vi phạm nhóm hành vi nào sau đây?",
+        a: [
+            "Không tổ chức sơ kết, tổng kết rút kinh nghiệm các chuyên đề công tác theo kế hoạch của Bộ Công an; sơ kết công tác 06 tháng đầu năm và tổng kết năm. Không có danh sách trực hoặc lịch trực được cấp có thẩm quyền phê duyệt; bố trí trực chỉ huy, trực ban, thường trực chiến đấu không đủ cơ cấu theo quy định của Bộ trưởng Bộ Công an.",
+            "Thực hiện không đúng quy định của Bộ Công an về quản lý tài liệu; quản lý vũ khí, vật liệu nổ, công cụ hỗ trợ, phương tiện nghiệp vụ; quản lý vật chứng, phương tiện và đồ vật, tài liệu tạm giữ; quản lý tài sản, phương tiện của đơn vị.",
+            "Tổng số lượt cán bộ chiến sĩ vi phạm điều lệnh trong năm có tỷ lệ từ 10% đến dưới 15% so với biên chế của đơn vị."
+        ]
+    },
+    {
+        q: "Thông tư số 113/2025/TT-BCA ngày 28/11/2025 của Bộ trưởng Bộ Công an quy định về xử lý vi phạm điều lệnh CAND, quy định xử lý bằng hình thức Hạ một bậc xếp loại đơn vị trong năm đối với đơn vị vi phạm nhóm hành vi nào sau đây?",
+        a: [
+            "Thực hiện không đúng chỉ thị, mệnh lệnh, kế hoạch, quyết định, quy trình, quy chế, quy định của cấp trên. Quán triệt không đầy đủ, kịp thời các văn bản chỉ đạo của cấp trên về công tác điều lệnh, quân sự, võ thuật.",
+            "Tổng số lượt cán bộ chiến sĩ vi phạm điều lệnh trong năm có tỷ lệ từ 5% đến dưới 10% so với biên chế của đơn vị.",
+            "Không phổ biến, không tổ chức thực hiện chỉ thị, mệnh lệnh, kế hoạch, quyết định, quy trình, quy chế, quy định của cấp trên; bao che, xử lý không đúng quy định hoặc không xử lý vi phạm điều lệnh."
+        ]
+    },
+    {
+        q: "Thông tư số 113/2025/TT-BCA ngày 28/11/2025 của Bộ trưởng Bộ Công an quy định về xử lý vi phạm điều lệnh CAND, quy định xử lý bằng hình thức Hạ hai bậc xếp loại đơn vị trong năm đối với đơn vị vi phạm nhóm hành vi nào sau đây?",
+        a: [
+            "Không xây dựng chương trình, kế hoạch công tác tuần, tháng, quý, 06 tháng, năm. Không phổ biến, không tổ chức thực hiện chỉ thị, mệnh lệnh, kế hoạch, quyết định, quy trình, quy chế, quy định của cấp trên; bao che, xử lý không đúng quy định hoặc không xử lý vi phạm điều lệnh.",
+            "Trụ sở cơ quan, đơn vị không treo cờ Tổ quốc theo quy định của pháp luật; không tổ chức canh gác hoặc thường trực bảo vệ, không có nội quy bảo vệ cơ quan; không có kế hoạch, phương án phòng chống cháy nổ, thiên tai, dịch bệnh.",
+            "Tổng số lượt cán bộ chiến sĩ vi phạm điều lệnh trong năm có tỷ lệ từ 15% đến dưới 20% so với biên chế của đơn vị."
+        ]
+    },
+    {
+        q: "Thông tư số 113/2025/TT-BCA ngày 28/11/2025 của Bộ trưởng Bộ Công an quy định về xử lý vi phạm điều lệnh CAND, quy định xử lý bằng hình thức Hạ một bậc danh hiệu thi đua năm đối với cán bộ chiến sĩ vi phạm nhóm hành vi nào sau đây?",
+        a: [
+            "Không tham gia chào cờ Tổ quốc theo quy định; khi làm nhiệm vụ trực ban, trực tiếp công dân không ghi chép nội dung liên quan trong ca trực vào số, không đeo băng trực ban, không ký nhận, bàn giao hoặc giao, nhận không đầy đủ với ca trước hoặc sau ca trực của mình.",
+            "Thực hiện không nghiêm túc chương trình kế hoạch công tác tuần được lãnh đạo phê duyệt; không kịp thời khắc phục tồn tại trong thực hiện công tác chuyên môn; thiếu tinh thần trách nhiệm trong công việc.",
+            "Thực hiện không đúng quy định của Bộ trưởng Bộ Công an về nội vụ, vệ sinh trụ sở cơ quan; nơi ăn, ngủ của cán bộ chiến sĩ; nơi sinh hoạt văn hóa, nơi tiếp khách, tiếp nhận giải quyết thủ tục hành chính."
+        ]
+    },
+    {
+        q: "Thông tư số 113/2025/TT-BCA ngày 28/11/2025 của Bộ trưởng Bộ Công an quy định về xử lý vi phạm điều lệnh CAND, quy định xử lý bằng hình thức Hạ hai bậc danh hiệu thi đua năm đối với cán bộ chiến sĩ vi phạm nhóm hành vi nào sau đây?",
+        a: [
+            "Chia sẻ, đăng tải thông tin, hình ảnh các loại giấy tờ, số hiệu CAND do ngành Công an cấp, hình ảnh cán bộ chiến sĩ sử dụng trang phục CAND lên mạng xã hội trừ trường hợp đăng tải hình ảnh có tác động tích cực đến xã hội, lan tỏa hình ảnh đẹp của lực lượng CAND; chia sẻ, đăng tải các đường dẫn đến thông tin, hình ảnh trên mạng có nội dung bị cấm, giả mạo, sai sự thật, gây hoang mang trong Nhân dân.",
+            "Không tham gia chào cờ Tổ quốc theo quy định; khi làm nhiệm vụ trực ban, trực tiếp công dân không ghi chép nội dung liên quan trong ca trực vào số, không đeo băng trực ban, không ký nhận, bàn giao hoặc giao, nhận không đầy đủ với ca trước hoặc sau ca trực của mình.",
+            "Không nắm vững quy định của Bộ trưởng Bộ Công an về chức trách, nhiệm vụ và các mối quan hệ công tác; báo cáo không đầy đủ, kịp thời kết quả thực hiện nhiệm vụ; vi phạm chế độ nghỉ dưỡng, nghỉ phép."
+        ]
+    },
+    {
+        q: "Thông tư số 113/2025/TT-BCA ngày 28/11/2025 của Bộ trưởng Bộ Công an quy định về xử lý vi phạm điều lệnh CAND, quy định xử lý bằng hình thức Hạ một bậc xếp loại cán bộ trong năm đối với cán bộ chiến sĩ vi phạm nhóm hành vi nào sau đây?",
+        a: [
+            "Lãnh đạo, chỉ huy không phê duyệt, nhận xét, đánh giá sổ kế hoạch công tác tuần của cán bộ chiến sĩ theo quy định; lãnh đạo, chỉ huy không nắm được quân số trong ca trực. Cán bộ chiến sĩ làm việc không có chương trình kế hoạch, không xây dựng chương trình kế hoạch công tác tuần.",
+            "Cán bộ chiến sĩ xây dựng chương trình kế hoạch công tác tuần và ghi kết quả thực hiện trong mẫu sổ kế hoạch công tác tuần được cấp phát nhưng không báo cáo lãnh đạo, chỉ huy phụ trách phê duyệt theo quy định.",
+            "Khi phát hiện vụ việc liên quan đến chức năng, nhiệm vụ cần phải giải quyết nhưng không giải quyết hoặc không báo cáo lãnh đạo cấp có thẩm quyền."
+        ]
+    },
+    {
+        q: "Thông tư số 113/2025/TT-BCA ngày 28/11/2025 của Bộ trưởng Bộ Công an quy định về xử lý vi phạm điều lệnh CAND, quy định xử lý bằng hình thức Cảnh cáo đối với cán bộ chiến sĩ vi phạm nhóm hành vi nào sau đây?",
+        a: [
+            "Khi gặp tình huống khẩn cấp, đột xuất, bất ngờ có nguy cơ đe dọa, xâm phạm đến an ninh, trật tự, đe dọa sức khỏe, tính mạng, tài sản, quyền và lợi ích hợp pháp của tổ chức và công dân nhưng không tham gia giải quyết, không tìm cách ngăn chặn hậu quả xảy ra, không báo ngay cho đơn vị Công an hoặc chính quyền địa phương nơi gần nhất để giải quyết.",
+            "Cán bộ chiến sĩ giao phương tiện, thiết bị kỹ thuật nghiệp vụ phục vụ công tác cho người không có đủ quyền và điều kiện sử dụng; cán bộ chiến sĩ bỏ tập huấn điều lệnh, quân sự, võ thuật không lý do.",
+            "Gây mất đoàn kết nội bộ, ảnh hưởng đến việc thực hiện nhiệm vụ chính trị và uy tín của lực lượng CAND. Khi phát hiện vụ việc liên quan đến chức năng, nhiệm vụ của đơn vị cần phải giải quyết nhưng không giải quyết hoặc không báo cáo lãnh đạo cấp có thẩm quyền."
+        ]
+    },
+    {
+        q: "Thông tư số 113/2025/TT-BCA ngày 28/11/2025 của Bộ trưởng Bộ Công an về xử lý vi phạm điều lệnh CAND quy định xử lý trách nhiệm liên đới như thế nào?",
+        a: [
+            "Chỉ xử lý trách nhiệm liên đới đối với lãnh đạo, chỉ huy cấp phòng và tương đương; cấp đội và tương đương; cấp xã và tương đương; cấp đại đội trực thuộc trung đoàn và tương đương. Trường hợp cán bộ chiến sĩ vi phạm điều lệnh mà trước đó thủ trưởng đơn vị, lãnh đạo, chỉ huy phụ trách trực tiếp đã nhắc nhở, chấn chỉnh bằng văn bản hoặc trong cuộc họp, giao ban đơn vị thì thủ trưởng đơn vị, lãnh đạo và chỉ huy phụ trách trực tiếp không phải chịu trách nhiệm liên đới.",
+            "Xử lý trách nhiệm liên đới đối với thủ trưởng đơn vị, lãnh đạo và chỉ huy phụ trách trực tiếp đơn vị, cán bộ chiến sĩ vi phạm điều lệnh bị xử lý bằng các hình thức theo quy định của Bộ Công an.",
+            "Khi đơn vị hoặc cán bộ chiến sĩ vi phạm điều lệnh CAND bị xử lý bằng các hình thức theo quy định của Bộ Công an thì thủ trưởng đơn vị, lãnh đạo, chỉ huy phụ trách trực tiếp bị xử lý trách nhiệm liên đới."
+        ]
+    },
+    {
+        q: "Thông tư số 113/2025/TT-BCA ngày 28/11/2025 của Bộ trưởng Bộ Công an quy định về xử lý vi phạm điều lệnh CAND, quy định thủ trưởng đơn vị bị xử lý trách nhiệm liên đới như thế nào khi đơn vị vi phạm điều lệnh CAND?",
+        a: [
+            "Đơn vị vi phạm bị xử lý bằng hình thức hạ một bậc danh hiệu thi đua năm, thủ trưởng đơn vị bị xử lý bằng hình thức phê bình; trường hợp đơn vị vi phạm nhiều lần, thủ trưởng đơn vị bị xử lý bằng hình thức hạ một bậc danh hiệu thi đua năm. Đơn vị bị xử lý bằng hình thức hạ hai bậc danh hiệu thi đua năm đến hạ hai bậc xếp loại đơn vị trong năm thì thủ trưởng đơn vị bị xử lý bằng hình thức hạ một bậc danh hiệu thi đua năm; trường hợp đơn vị vi phạm điều lệnh nhiều lần, thủ trưởng đơn vị bị xử lý bằng hình thức hạ hai bậc danh hiệu thi đua năm.",
+            "Thủ trưởng đơn vị bị xử lý trách nhiệm liên đới khi đơn vị vi phạm điều lệnh CAND; hình thức xử lý đối với thủ trưởng đơn vị tương ứng với hình thức xử lý của đơn vị; tùy vào tính chất, mức độ vi phạm để áp dụng tình tiết tăng nặng, giảm nhẹ.",
+            "Mỗi hành vi vi phạm chỉ xử lý một lần. Trường hợp vi phạm nhiều lần cùng hành vi vi phạm thì xử lý cao hơn một bậc so với hình thức xử lý tương ứng với hành vi đó; trong cùng một thời điểm đơn vị vi phạm nhiều hành vi thì thủ trưởng đơn vị chịu trách nhiệm liên đới đối với hành vi bị xử lý bằng hình thức thấp nhất."
+        ]
+    },
+    {
+        q: "Thông tư số 113/2025/TT-BCA ngày 28/11/2025 của Bộ trưởng Bộ Công an quy định về xử lý vi phạm điều lệnh CAND, quy định thủ trưởng đơn vị bị xử lý trách nhiệm liên đới như thế nào khi cán bộ chiến sĩ vi phạm điều lệnh CAND?",
+        a: [
+            "Cán bộ chiến sĩ vi phạm bị xử lý bằng hình thức hạ một bậc danh hiệu thi đua năm, lãnh đạo, chỉ huy trực tiếp quản lý cán bộ tại thời điểm cán bộ chiến sĩ vi phạm bị xử lý bằng hình thức phê bình. Cán bộ chiến sĩ bị xử lý bằng hình thức hạ hai bậc danh hiệu thi đua năm đến hạ hai bậc xếp loại cán bộ trong năm, lãnh đạo, chỉ huy trực tiếp quản lý cán bộ tại thời điểm cán bộ chiến sĩ vi phạm bị xử lý bằng hình thức hạ một bậc danh hiệu thi đua năm.",
+            "Cán bộ chiến sĩ vi phạm bị xử lý bằng hình thức phê bình, lãnh đạo, chỉ huy trực tiếp quản lý cán bộ tại thời điểm cán bộ chiến sĩ vi phạm bị xử lý bằng hình thức phê bình và tương tự với các hình thức xử lý khác.",
+            "Cán bộ chiến sĩ vi phạm điều lệnh bị xử lý bằng hình thức nào thì lãnh đạo, chỉ huy trực tiếp quản lý cán bộ tại thời điểm cán bộ chiến sĩ vi phạm bị xử lý cao hơn hình thức xử lý của cán bộ chiến sĩ."
+        ]
+    },
+    {
+        q: "Thông tư số 113/2025/TT-BCA ngày 28/11/2025 của Bộ trưởng Bộ Công an quy định về xử lý vi phạm điều lệnh CAND, quy định có những hình thức xử lý nào đối với đơn vị, cán bộ chiến sĩ vi phạm điều lệnh CAND?",
+        a: [
+            "Đối với đơn vị vi phạm điều lệnh xử lý bằng các hình thức: Phê bình; hạ bậc danh hiệu thi đua năm; hạ bậc xếp loại đơn vị trong năm. Đối với cán bộ chiến sĩ vi phạm điều lệnh xử lý bằng các hình thức: Phê bình; hạ bậc danh hiệu thi đua năm; hạ bậc xếp loại cán bộ trong năm.",
+            "Mọi hành vi vi phạm điều lệnh của đơn vị, cán bộ chiến sĩ đều phải được xử lý theo quy định của Thông tư 113 và các quy định khác có liên quan đến điều lệnh CAND.",
+            "Trong cùng một thời điểm, đơn vị, cán bộ chiến sĩ vi phạm nhiều hành vi thì thực hiện như sau: Nếu các hành vi có hình thức xử lý khác nhau thì áp dụng hình thức xử lý cao hơn một bậc so với hình thức xử lý cao nhất."
+        ]
+    },
+    {
+        q: "Kế hoạch số 79/KH-CAT-PX03 ngày 23/02/2026 của Giám đốc Công an tỉnh về triển khai thực hiện Nghị quyết của Đảng ủy Công an tỉnh về tổ chức phong trào thi đua Ba nhất quy định nội dung Kỷ luật nhất có những tiêu chí nào?",
+        a: [
+            "Nội dung Kỷ luật nhất gồm các tiêu chí: Thượng tôn pháp luật; kỷ luật Đảng; gương mẫu đi đầu; kỷ luật tổ chức; kỷ luật công tác chiến đấu; kỷ luật tự thân; kỷ luật văn hóa, phát ngôn.",
+            "Nội dung Kỷ luật nhất gồm các tiêu chí: Thượng tôn pháp luật; kỷ luật Đảng; kỷ luật tổ chức; kỷ luật công tác chiến đấu; kỷ luật tự thân; kỷ luật văn hóa, phát ngôn.",
+            "Nội dung Kỷ luật nhất gồm các tiêu chí: Thượng tôn pháp luật; gương mẫu đi đầu; kỷ luật tổ chức; kỷ luật công tác chiến đấu; kỷ luật tự thân; kỷ luật văn hóa, phát ngôn."
+        ]
+    },
+    {
+        q: "Kế hoạch số 79/KH-CAT-PX03 ngày 23/02/2026 của Giám đốc Công an tỉnh về triển khai thực hiện Nghị quyết của Đảng ủy Công an tỉnh về tổ chức phong trào thi đua Ba nhất quy định nội dung Trung thành nhất có những tiêu chí nào?",
+        a: [
+            "Nội dung Trung thành nhất gồm các tiêu chí: Tận trung; kiên định; kiên quyết; bảo vệ nội bộ; trong sạch, vững mạnh; chính trực; cống hiến và phấn đấu vươn lên.",
+            "Nội dung Trung thành nhất gồm các tiêu chí: Tận trung; kiên định; kiên quyết; bảo vệ nội bộ; trong sạch, vững mạnh; cống hiến và phấn đấu vươn lên.",
+            "Nội dung Trung thành nhất gồm các tiêu chí: Tận trung; kiên định; kiên quyết; bảo vệ nội bộ; chính trực; cống hiến và phấn đấu vươn lên."
+        ]
+    },
+    {
+        q: "Kế hoạch số 79/KH-CAT-PX03 ngày 23/02/2026 của Giám đốc Công an tỉnh về triển khai thực hiện Nghị quyết của Đảng ủy Công an tỉnh về tổ chức phong trào thi đua Ba nhất quy định nội dung Gần dân nhất có những tiêu chí nào?",
+        a: [
+            "Nội dung Gần dân nhất gồm các tiêu chí: Dân là gốc; kính trọng, lễ phép với nhân dân; lắng nghe dân; điểm tựa bình yên của dân; sống trong lòng dân; đồng hành cùng Nhân dân; pháthuy sức mạnh toàn dân.",
+            "Nội dung Gần dân nhất gồm các tiêu chí: Dân là gốc; kính trọng, lễ phép với nhân dân; điểm tựa bình yên của dân; sống trong lòng dân; đồng hành cùng Nhân dân; phát huy sức mạnh toàn dân.",
+            "Nội dung Gần dân nhất gồm các tiêu chí: Dân là gốc; kính trọng, lễ phép với Nhân dân; lắng nghe dân; sống trong lòng dân; đồng hành cùng Nhân dân; phát huy sức mạnh toàn dân"
+        ]
+    }
+];
+
+let processedQuestions = [];
+
+// Thuật toán xáo trộn Fisher-Yates
+function shuffle(array) {
+    let currentIndex = array.length, randomIndex;
+    while (currentIndex !== 0) {
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex--;
+        [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+    }
+    return array;
+}
+
+// Khởi tạo bài thi
+function initQuiz() {
+    const container = document.getElementById('questions-container');
+    container.innerHTML = '';
+
+    // Xáo trộn 40 câu hỏi gốc
+    let shuffledQ = shuffle([...rawQuestions]);
+
+    processedQuestions = shuffledQ.map((item, qIndex) => {
+        let originalCorrectText = item.a[0]; // Đáp án đúng luôn ở vị trí 0 ban đầu
+        let shuffledAnswers = shuffle([...item.a]); // Xáo trộn đáp án
+        
+        return {
+            qIndex: qIndex,
+            title: item.q,
+            answers: shuffledAnswers,
+            correctText: originalCorrectText
+        };
+    });
+
+    // Render danh sách câu hỏi ra màn hình
+    processedQuestions.forEach((item, index) => {
+        let qCard = document.createElement('div');
+        qCard.className = 'question-card';
+        qCard.id = `q-card-${index}`;
+
+        let labels = ['A', 'B', 'C', 'D'];
+        let optionsHTML = item.answers.map((ans, aIdx) => `
+            <li class="option-item">
+                <label class="option-label">
+                    <input type="radio" name="question_${index}" value="${labels[aIdx]}" data-text="${encodeURIComponent(ans)}" onchange="updateProgress()">
+                    <b>${labels[aIdx]}.</b>&nbsp;${ans}
+                </label>
+            </li>
+        `).join('');
+
+        qCard.innerHTML = `
+            <div class="question-title">Câu ${index + 1}: ${item.title}</div>
+            <ul class="options">${optionsHTML}</ul>
+            <div class="answer-key" id="key-${index}" style="display:none;"></div>
+        `;
+        container.appendChild(qCard);
+    });
+
+    updateProgress();
+}
+
+// Đếm tiến độ làm bài
+function updateProgress() {
+    let answeredCount = 0;
+    for (let i = 0; i < processedQuestions.length; i++) {
+        let selected = document.querySelector(`input[name="question_${i}"]:checked`);
+        if (selected) answeredCount++;
+    }
+    document.getElementById('progress-text').innerText = `Đã hoàn thành: ${answeredCount} / ${processedQuestions.length} câu`;
+    return answeredCount;
+}
+
+// Chấm điểm & Hiển thị kết quả
+function submitQuiz() {
+    let answeredCount = updateProgress();
+    
+    if (answeredCount < processedQuestions.length) {
+        alert(`Bạn chưa làm hết 40 câu! Hiện tại bạn mới chọn ${answeredCount}/40 câu. Vui lòng hoàn thành tất cả các câu trước khi nộp bài.`);
+        return;
+    }
+
+    let score = 0;
+    let labels = ['A', 'B', 'C', 'D'];
+
+    processedQuestions.forEach((item, index) => {
+        let selectedOption = document.querySelector(`input[name="question_${index}"]:checked`);
+        let selectedText = decodeURIComponent(selectedOption.getAttribute('data-text'));
+        
+        // Tìm vị trí đáp án đúng tương ứng với ký tự A, B, C hiện tại
+        let correctOptionIndex = item.answers.indexOf(item.correctText);
+        let correctLabel = labels[correctOptionIndex];
+
+        let card = document.getElementById(`q-card-${index}`);
+        let keyBox = document.getElementById(`key-${index}`);
+
+        if (selectedText === item.correctText) {
+            score++;
+            card.classList.add('correct');
+            keyBox.innerHTML = `✓ Chính xác! Đáp án đúng là: <b>${correctLabel}</b>`;
+            keyBox.style.color = '#2e7d32';
+        } else {
+            card.classList.add('incorrect');
+            keyBox.innerHTML = `✗ Sai rồi! Bạn chọn (${selectedOption.value}). Đáp án đúng phải là: <b>${correctLabel}</b>`;
+            keyBox.style.color = '#c62828';
+        }
+        keyBox.style.display = 'block';
+    });
+
+    // Hiển thị tổng điểm
+    let resultBox = document.getElementById('result');
+    resultBox.style.display = 'block';
+    resultBox.innerHTML = `
+        <h2>KẾT QUẢ BÀI THI</h2>
+        <p style="font-size: 1.2rem;">Bạn đã trả lời đúng <b>${score} / ${processedQuestions.length}</b> câu.</p>
+        <p>Tỷ lệ chính xác: <b>${((score / processedQuestions.length) * 100).toFixed(1)}%</b></p>
+    `;
+    
+    // Tự động cuộn xuống phần kết quả
+    resultBox.scrollIntoView({ behavior: 'smooth' });
+}
+
+// Chạy tự động khi tải trang
+window.onload = initQuiz;
+</script>
+
+</body>
+</html>
